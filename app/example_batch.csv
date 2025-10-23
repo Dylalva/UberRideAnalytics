@@ -1,0 +1,6 @@
+date,time,vehicle_type,pickup_location,drop_location,avg_vtat,avg_ctat,booking_value,ride_distance,driver_ratings,customer_rating,payment_method,day,month
+2024-01-15,14:30,Auto,Connaught Place,Dwarka,5.2,25.5,350.00,12.5,4.8,4.7,UPI,Monday,January
+2024-01-15,16:45,Go Sedan,Malviya Nagar,Gurgaon Sector 56,8.1,35.2,520.00,18.3,4.5,4.6,Credit Card,Monday,January
+2024-01-16,09:15,eBike,Palam Vihar,Jhilmil,3.5,15.8,180.00,8.2,4.9,4.8,Cash,Tuesday,January
+2024-01-16,18:20,Prime Sedan,Shastri Nagar,Connaught Place,12.3,28.7,680.00,15.7,4.2,4.3,Debit Card,Tuesday,January
+2024-01-17,11:00,Prime SUV,Khandsa,Dwarka,6.8,42.5,890.00,22.1,4.7,4.9,Wallet,Wednesday,January

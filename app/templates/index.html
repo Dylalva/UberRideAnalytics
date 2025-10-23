@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uber Ride Analytics - Predictor</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-dark bg-dark">
+        <div class="container-fluid">
+            <span class="navbar-brand mb-0 h1">🚗 Uber Ride Analytics</span>
+            <div>
+                <a href="/" class="btn btn-outline-light btn-sm">Predictor</a>
+                <a href="/history" class="btn btn-outline-light btn-sm">Historial</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Predicción Individual</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="predictionForm">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Fecha</label>
+                                    <input type="date" class="form-control" id="date" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Hora</label>
+                                    <input type="time" class="form-control" id="time" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Tipo de Vehículo</label>
+                                    <select class="form-select" id="vehicle_type" required>
+                                        {% for vt in vehicle_types %}
+                                        <option value="{{ vt }}">{{ vt }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Método de Pago</label>
+                                    <select class="form-select" id="payment_method" required>
+                                        {% for pm in payment_methods %}
+                                        <option value="{{ pm }}">{{ pm }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Ubicación de Recogida</label>
+                                    <select class="form-select" id="pickup_location" required>
+                                        {% for loc in locations %}
+                                        <option value="{{ loc }}">{{ loc }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Ubicación de Destino</label>
+                                    <select class="form-select" id="drop_location" required>
+                                        {% for loc in locations %}
+                                        <option value="{{ loc }}">{{ loc }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">VTAT Promedio (min)</label>
+                                    <input type="number" step="0.1" class="form-control" id="avg_vtat" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">CTAT Promedio (min)</label>
+                                    <input type="number" step="0.1" class="form-control" id="avg_ctat" required>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Valor de Reserva</label>
+                                    <input type="number" step="0.01" class="form-control" id="booking_value" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Distancia (km)</label>
+                                    <input type="number" step="0.1" class="form-control" id="ride_distance" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Día</label>
+                                    <select class="form-select" id="day" required>
+                                        {% for d in days %}
+                                        <option value="{{ d }}">{{ d }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Calificación Conductor</label>
+                                    <input type="number" step="0.1" min="1" max="5" class="form-control" id="driver_ratings" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Calificación Cliente</label>
+                                    <input type="number" step="0.1" min="1" max="5" class="form-control" id="customer_rating" required>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <label class="form-label">Mes</label>
+                                    <select class="form-select" id="month" required>
+                                        {% for m in months %}
+                                        <option value="{{ m }}">{{ m }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Predecir Estado</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>Predicción por Lotes</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="batchForm">
+                            <div class="mb-3">
+                                <label class="form-label">Subir archivo CSV</label>
+                                <input type="file" class="form-control" id="csvFile" accept=".csv" required>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">Procesar Lote</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card" id="resultCard" style="display: none;">
+                    <div class="card-header">
+                        <h5>Resultado de Predicción</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert" id="predictionResult"></div>
+                        <h6>Probabilidades:</h6>
+                        <div id="probabilities"></div>
+                    </div>
+                </div>
+
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5>Importancia de Características</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="featureChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
