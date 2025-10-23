@@ -2,6 +2,7 @@ version: '3.8'
 services:
   uberanalysis:
     build: .
+    image: dylalva/uberanalysis:latest
     ports:
       - "5000:5000"
     volumes:
