@@ -1,40 +1,45 @@
-# Python
+# Entorno virtual
+venv/
+env/
+ENV/
+.venv/
+# Archivos de Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-venv/
-env/
-ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
-# Flask
-instance/
-.webassets-cache
+# Variables de entorno
+.env
 
-# Database
-*.db
-*.sqlite
-*.sqlite3
-
-# Uploads
-uploads/*
-!uploads/.gitkeep
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
+# Archivos de datos
+data/*.csv
 
 # Logs
 *.log
 
-# Environment
-.env
-.env.local
+# Archivos de sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de IDE
+.idea/
+.vscode/
+*.swp
+*.swo

@@ -1,0 +1,180 @@
+---
+- name: Despliegue Docker TeenSmartInsight con HTTPS
+  hosts: web
+  become: true
+
+  vars:
+    app_name: uberanalysis
+    docker_image: dylalva/app-uberanalysis:latest
+    domain: uberanalysis.dylandata.site
+
+  tasks:
+    - name: Actualizar repositorios
+      apt:
+        update_cache: yes
+
+    - name: Instalar dependencias
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - nginx
+          - python3-pip
+          - certbot
+          - python3-certbot-nginx
+        state: present
+
+    - name: Instalar Docker
+      block:
+        - name: Añadir clave GPG de Docker
+          apt_key:
+            url: https://download.docker.com/linux/ubuntu/gpg
+            state: present
+
+        - name: Añadir repositorio Docker
+          apt_repository:
+            repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+            state: present
+
+        - name: Instalar Docker
+          apt:
+            name:
+              - docker-ce
+              - docker-ce-cli
+              - containerd.io
+            state: present
+
+        - name: Instalar pip
+          apt:
+            name: python3-pip
+            state: present
+
+    - name: Asegurar que Docker está iniciado
+      service:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Desplegar contenedor Docker
+      command: docker run -d --name {{ app_name }} -p 5000:5000 --restart always {{ docker_image }}
+      args:
+        creates: "/var/lib/docker/containers/*{{ app_name }}*"
+      register: docker_run
+      failed_when: docker_run.rc != 0 and 'already in use' not in docker_run.stderr
+      
+    - name: Verificar si el contenedor ya existe
+      command: docker ps -a --filter "name={{ app_name }}"
+      register: docker_ps
+      changed_when: false
+      
+    - name: Reiniciar contenedor si ya existe
+      command: docker restart {{ app_name }}
+      when: docker_run.rc != 0 and 'already in use' in docker_run.stderr
+
+    - name: Configurar Nginx para proxy inverso con HTTPS
+      block:
+        - name: Eliminar configuración predeterminada de Nginx
+          file:
+            path: /etc/nginx/sites-enabled/default
+            state: absent
+          notify: Reiniciar nginx
+
+        - name: Crear configuración Nginx para HTTP (temporal)
+          copy:
+            dest: /etc/nginx/sites-available/{{ app_name }}
+            content: |
+              server {
+                  listen 80;
+                  server_name {{ domain }};
+                  
+                  location / {
+                      proxy_pass http://localhost:5000;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+              }
+            mode: '0644'
+
+        - name: Crear configuración Nginx para HTTPS
+          copy:
+            dest: /tmp/nginx-https.conf
+            content: |
+              server {
+                  listen 80;
+                  server_name {{ domain }};
+                  return 301 https://$host$request_uri;
+              }
+
+              server {
+                  listen 443 ssl;
+                  server_name {{ domain }};
+                  
+                  ssl_certificate /etc/letsencrypt/live/{{ domain }}/fullchain.pem;
+                  ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem;
+                  
+                  ssl_protocols TLSv1.2 TLSv1.3;
+                  ssl_prefer_server_ciphers on;
+                  ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA384;
+                  ssl_session_timeout 1d;
+                  ssl_session_cache shared:SSL:10m;
+                  ssl_stapling on;
+                  ssl_stapling_verify on;
+                  
+                  location / {
+                      proxy_pass http://localhost:5000;
+                      proxy_set_header Host $host;
+                      proxy_set_header X-Real-IP $remote_addr;
+                      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                      proxy_set_header X-Forwarded-Proto $scheme;
+                  }
+              }
+            mode: '0644'
+
+        - name: Habilitar sitio en Nginx
+          file:
+            src: /etc/nginx/sites-available/{{ app_name }}
+            dest: /etc/nginx/sites-enabled/{{ app_name }}
+            state: link
+          notify: Reiniciar nginx
+
+        - name: Reiniciar Nginx para aplicar configuración HTTP
+          service:
+            name: nginx
+            state: restarted
+
+    - name: Configurar HTTPS con Certbot
+      block:
+        - name: Obtener certificado SSL con Certbot
+          command: >
+            certbot --nginx -d {{ domain }} --non-interactive --agree-tos --email dylalva1933@gmail.com
+            --redirect
+          register: certbot_result
+          failed_when: false
+
+        - name: Aplicar configuración HTTPS si Certbot tuvo éxito
+          copy:
+            src: /tmp/nginx-https.conf
+            dest: /etc/nginx/sites-available/{{ app_name }}
+            mode: '0644'
+            remote_src: yes
+          when: certbot_result.rc == 0
+          notify: Reiniciar nginx
+
+        - name: Configurar renovación automática de certificados
+          cron:
+            name: "Renovar certificados SSL"
+            job: "certbot renew --quiet --no-self-upgrade"
+            hour: "3"
+            minute: "30"
+            weekday: "1"
+          when: certbot_result.rc == 0
+
+  handlers:
+    - name: Reiniciar nginx
+      service:
+        name: nginx
+        state: restarted

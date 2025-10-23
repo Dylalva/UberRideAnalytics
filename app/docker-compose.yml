@@ -1,14 +1,14 @@
 version: '3.8'
-
 services:
-  web:
+  uberanalysis:
     build: .
     ports:
       - "5000:5000"
     volumes:
+      - .:/app
+      - ./models:/app/models:ro
       - ./uploads:/app/uploads
-      - ../models:/app/models
       - ./predictions.db:/app/predictions.db
-    environment:
-      - FLASK_ENV=production
+    env_file:
+      - .env
     restart: unless-stopped

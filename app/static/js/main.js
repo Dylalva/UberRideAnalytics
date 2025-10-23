@@ -52,13 +52,22 @@ document.getElementById('batchForm').addEventListener('submit', async (e) => {
             body: formData
         });
         
-        const result = await response.json();
+        const data = await response.json();
         
-        if (result.success) {
-            alert(`Predicciones completadas: ${result.total_predictions}`);
-            window.location.href = result.download_url;
+        if (data.success) {
+            const downloadUrl = data.report?.download_url || `/download_predictions/${data.report?.saved_file}`;
+            // mostrar enlace o forzar descarga
+            const linkEl = document.getElementById('download-link');
+            if (linkEl) {
+                linkEl.href = downloadUrl;
+                linkEl.style.display = 'inline';
+                linkEl.textContent = 'Descargar predicciones';
+            } else {
+                // forzar descarga
+                window.location = downloadUrl;
+            }
         } else {
-            alert('Error: ' + result.error);
+            alert('Error: ' + data.error);
         }
     } catch (error) {
         alert('Error al procesar el archivo: ' + error);

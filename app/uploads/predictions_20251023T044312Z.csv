@@ -1,0 +1,6 @@
+date,time,vehicle_type,pickup_location,drop_location,avg_vtat,avg_ctat,booking_value,ride_distance,driver_ratings,customer_rating,payment_method,day,month,prediction,prob_Cancelled by Customer,prob_Cancelled by Driver,prob_Completed,prob_Incomplete,prob_No Driver Found
+2024-01-15,14:30,Auto,Connaught Place,Dwarka,5.2,25.5,350.0,12.5,4.8,4.7,UPI,Monday,January,Completed,0.0,0.0,0.9625838459335746,0.037416154066425455,0.0
+2024-01-15,16:45,Go Sedan,Malviya Nagar,Gurgaon Sector 56,8.1,35.2,520.0,18.3,4.5,4.6,Credit Card,Monday,January,Completed,0.0007536801916516998,0.0036564589026727968,0.9667634759019426,0.028826385003732885,0.0
+2024-01-16,09:15,eBike,Palam Vihar,Jhilmil,3.5,15.8,180.0,8.2,4.9,4.8,Cash,Tuesday,January,Completed,0.00011235425947233875,0.0,0.9173495037019823,0.08242285467295193,0.00011528736559344404
+2024-01-16,18:20,Prime Sedan,Shastri Nagar,Connaught Place,12.3,28.7,680.0,15.7,4.2,4.3,Debit Card,Tuesday,January,Completed,0.006548333579777374,0.0007209052253915243,0.9776866608371277,0.013651140972732043,0.0013929593849712903
+2024-01-17,11:00,Prime SUV,Khandsa,Dwarka,6.8,42.5,890.0,22.1,4.7,4.9,Wallet,Wednesday,January,Completed,0.001364754499096221,0.007783051832180758,0.9842709439288347,0.005729056071165365,0.0008521936687230196
