@@ -1,12 +1,12 @@
 ---
-- name: Despliegue Docker TeenSmartInsight con HTTPS
+- name: Despliegue Docker uberanalysis con HTTPS
   hosts: web
   become: true
 
   vars:
     app_name: uberanalysis
-    docker_image: dylalva/app-uberanalysis:latest
     domain: uberanalysis.dylandata.site
+    app_dir: /opt/uberanalysis
 
   tasks:
     - name: Actualizar repositorios
@@ -25,6 +25,12 @@
           - certbot
           - python3-certbot-nginx
         state: present
+
+    - name: Crear swapfile de 2 GB (opcional)
+      command: fallocate -l 2G /swapfile
+      args:
+        creates: /swapfile
+
 
     - name: Instalar Docker
       block:
@@ -57,21 +63,69 @@
         state: started
         enabled: yes
 
-    - name: Desplegar contenedor Docker
-      command: docker run -d --name {{ app_name }} -p 5000:5000 --restart always {{ docker_image }}
-      args:
-        creates: "/var/lib/docker/containers/*{{ app_name }}*"
-      register: docker_run
-      failed_when: docker_run.rc != 0 and 'already in use' not in docker_run.stderr
-      
-    - name: Verificar si el contenedor ya existe
-      command: docker ps -a --filter "name={{ app_name }}"
-      register: docker_ps
-      changed_when: false
-      
-    - name: Reiniciar contenedor si ya existe
-      command: docker restart {{ app_name }}
-      when: docker_run.rc != 0 and 'already in use' in docker_run.stderr
+    - name: Crear directorio de la aplicación
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Crear subdirectorios necesarios
+      file:
+        path: "{{ app_dir }}/{{ item }}"
+        state: directory
+        mode: '0755'
+      with_items:
+        - models
+        - uploads
+        - logs
+
+    - name: Crear docker-compose.yml para producción
+      copy:
+        dest: "{{ app_dir }}/docker-compose.yml"
+        content: |
+          services:
+            uberanalysis:
+              image: dylalva/app-uberanalysis:latest
+              ports:
+                - "5000:5000"
+              volumes:
+                - ./models:/app/models:ro
+                - ./uploads:/app/uploads
+              env_file:
+                - .env
+              restart: unless-stopped
+        mode: '0644'
+
+    - name: Copiar archivo .env
+      copy:
+        src: ../app/.env
+        dest: "{{ app_dir }}/.env"
+        mode: '0600'
+
+    - name: Copiar archivos del modelo
+      copy:
+        src: ../app/models/
+        dest: "{{ app_dir }}/models/"
+        mode: '0644'
+
+    - name: Install Python Docker SDK
+      apt:
+        name:
+          - python3-docker
+          - docker-compose
+        state: present
+
+    - name: Desplegar con Docker Compose v2
+      community.docker.docker_compose_v2:
+        project_src: "{{ app_dir }}"
+        state: present
+        pull: always
+      register: docker_compose_result
+
+
+    - name: Verificar estado del despliegue
+      debug:
+        var: docker_compose_result
 
     - name: Configurar Nginx para proxy inverso con HTTPS
       block:

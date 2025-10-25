@@ -49,7 +49,7 @@ resource "aws_security_group" "web_sg" {
 
 resource "aws_instance" "web" {
   ami                    = "ami-0d1b5a8c13042c939" # Ubuntu 22.04 LTS
-  instance_type          = "t2.micro"
+  instance_type = "t3.small"
   key_name               = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.web_sg.id]
 }
